@@ -1,4 +1,4 @@
-local M = {}
+local smartcodecopy = {}
 
 -- Function to get the current function declaration
 local function get_function_declaration()
@@ -49,7 +49,7 @@ local function get_node_text(node)
 end
 
 -- Function to print information
-function M.print_info()
+function smartcodecopy.copy_with_context()
   local bufnr = vim.api.nvim_get_current_buf()
   local file_name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ':.')
 
@@ -109,4 +109,4 @@ end
 -- 	M.print_info()
 -- end, { range = true })
 
-return M
+return smartcodecopy
