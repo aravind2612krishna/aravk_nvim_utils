@@ -1,9 +1,9 @@
 local smartcodecopy = {}
 
 smartcodecopy.opts = {
-    -- The keymap to copy the code
-    keymap = '<leader>sc',
-    addFunction = true,
+  -- The keymap to copy the code
+  keymap = '<leader>sc',
+  addFunction = true,
 }
 
 local function get_current_context_from_lsp()
@@ -78,7 +78,11 @@ local function get_function_declaration()
       -- vim.print(namedChild:type())
       if
         namedChild
-        and (namedChild:type() == 'function_declarator' or namedChild:type() == 'declarator' or namedChild:type() == 'name')
+        and (
+          namedChild:type() == 'function_declarator'
+          or namedChild:type() == 'declarator'
+          or namedChild:type() == 'name'
+        )
       then
         return namedChild
       end
@@ -111,11 +115,11 @@ local function get_function_decl_lines()
     local startline = rootfound:start()
     local endline = rootfound:named_child(rootfound:named_child_count() - 1):start()
     if endline >= startline then
-        -- Get all lines between startline and endline in func_decl_lines, with line numbers
-        local lines = vim.api.nvim_buf_get_lines(0, startline, endline, false)
-        for i, line in ipairs(lines) do
-            func_decl_lines = func_decl_lines .. (startline + i - 1) .. ": " .. line .. "\n"
-        end
+      -- Get all lines between startline and endline in func_decl_lines, with line numbers
+      local lines = vim.api.nvim_buf_get_lines(0, startline, endline, false)
+      for i, line in ipairs(lines) do
+        func_decl_lines = func_decl_lines .. (startline + i - 1) .. ': ' .. line .. '\n'
+      end
     end
   end
   return func_decl_lines
@@ -138,7 +142,7 @@ local function get_node_text(node, with_line_numbers)
   end
   lines[#lines] = string.sub(lines[#lines], 1, end_col)
   lines[1] = string.sub(lines[1], start_col + 1)
-    return table.concat(lines, '\n')
+  return table.concat(lines, '\n')
 end
 
 -- Copied from codesnap
@@ -151,12 +155,12 @@ local function get_whole_lines(from, to)
       table.insert(lines, vim.api.nvim_buf_get_lines(0, i - 1, i, false)[1])
     end
   end
-  return table.concat(lines, "\n")
+  return table.concat(lines, '\n')
 end
 
 local function get_selected_text_realtime()
-  local start_pos = vim.fn.getpos("v")
-  local end_pos = vim.fn.getpos(".")
+  local start_pos = vim.fn.getpos('v')
+  local end_pos = vim.fn.getpos('.')
 
   -- We switch the start and end positions if the start is after the end line or character
   -- This way we can always select from the top down and from left to right
@@ -164,12 +168,14 @@ local function get_selected_text_realtime()
     start_pos, end_pos = end_pos, start_pos
   end
 
-  if vim.api.nvim_get_mode().mode == "V" then
+  if vim.api.nvim_get_mode().mode == 'V' then
     return get_whole_lines(start_pos[2], end_pos[2])
   end
 
   if start_pos[2] == end_pos[2] then
-    return vim.api.nvim_buf_get_lines(0, start_pos[2] - 1, start_pos[2], false)[1]:sub(start_pos[3], end_pos[3] - 1)
+    return vim.api
+      .nvim_buf_get_lines(0, start_pos[2] - 1, start_pos[2], false)[1]
+      :sub(start_pos[3], end_pos[3] - 1)
   end
 
   local selected_text = {}
@@ -186,6 +192,14 @@ local function get_selected_text_realtime()
   end
 
   return selected_text
+end
+
+local function split_string(input_str, delimiter)
+    local result = {}
+    for match in (input_str..delimiter):gmatch("(.-)"..delimiter) do
+        table.insert(result, match)
+    end
+    return result
 end
 
 -- Function to print information
@@ -259,7 +273,12 @@ function smartcodecopy.copy_with_context()
     os.execute(cmd)
     os.remove(tmpfile)
   else
-    vim.fn.setreg('+', outcontent)
+    if os.getenv('SSH_CONNECTION') then
+      vim.fn.setreg('*', outcontent)
+      require('vim.ui.clipboard.osc52').copy('*')(split_string(outcontent, "\n"))
+    else
+      vim.fn.setreg('+', outcontent)
+    end
   end
 end
 
@@ -284,7 +303,7 @@ function smartcodecopy.setup(opts)
       { 'n', 'x' },
       smartcodecopy.opts.keymap,
       '<cmd>CopyContext<cr>',
-    { silent = true, desc = "Copy code with context" }
+      { silent = true, desc = 'Copy code with context' }
     )
   end
 end
