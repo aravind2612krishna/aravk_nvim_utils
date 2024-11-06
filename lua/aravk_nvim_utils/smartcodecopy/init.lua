@@ -6,6 +6,52 @@ smartcodecopy.opts = {
     addFunction = true,
 }
 
+local function get_current_context_from_lsp()
+  local bufnr = vim.api.nvim_get_current_buf()
+
+  -- Check if LSP is attached to the current buffer
+  local clients = vim.lsp.buf_get_clients(bufnr)
+  if vim.tbl_isempty(clients) then
+    print("No LSP clients attached to the current buffer")
+    return
+  end
+
+  local params = { textDocument = vim.lsp.util.make_text_document_params() }
+
+  -- Send the request to the language server
+  vim.lsp.buf_request(bufnr, 'textDocument/documentSymbol', params, function(err, result, ctx, config)
+    if err then
+      print("Error: ", err)
+      return
+    end
+
+    if not result or vim.tbl_isempty(result) then
+      print("No symbols found")
+      return
+    end
+
+    local current_line = vim.api.nvim_win_get_cursor(0)[1] - 1
+    local context = {}
+
+    -- Helper function to find the context recursively
+    local function find_context(symbols)
+      for _, symbol in ipairs(symbols) do
+        if symbol.range.start.line <= current_line and symbol.range["end"].line >= current_line then
+          table.insert(context, symbol.name)
+          if symbol.children then
+            find_context(symbol.children)
+          end
+        end
+      end
+    end
+
+    find_context(result)
+
+    -- Print the context
+    print("Current context: " .. table.concat(context, " -> "))
+  end)
+end
+
 -- Function to get the current function declaration
 local function get_function_declaration()
   local ok, ts_utils = pcall(require, 'nvim-treesitter.ts_utils')
@@ -144,18 +190,35 @@ end
 
 -- Function to print information
 function smartcodecopy.copy_with_context()
+    local addmd = false
+
+    
   local bufnr = vim.api.nvim_get_current_buf()
   local file_name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ':.')
 
   local lines = vim.fn.getline("'<", "'>")
   local start_line = vim.fn.getpos('v')[2]
 
-  local linesep = '---------------- \n'
+  local llcc='' -- linewise comment character
+  local ftc = require('Comment.ft')
+  local buffer_ft = vim.api.nvim_buf_get_option(0, 'filetype')
+  if ftc and buffer_ft then
+      local cchar = ftc.get(buffer_ft)
+      if cchar then
+          llcc = string.gsub(cchar[1], "%%s", " ")
+      end
+  end
+
+  local linesep = llcc .. '---------------- \n'
   local canhtml = false -- vim.fn.exepath("xclip")
 
   local outcontent = ''
+  if addmd then
+      outcontent = outcontent .. '```' .. buffer_ft .. '\n'
+  end
+
   if file_name then
-    outcontent = outcontent .. 'File: ' .. file_name .. '\n'
+    outcontent = outcontent .. llcc .. 'File: ' .. file_name .. '\n'
     outcontent = outcontent .. linesep
   end
 
@@ -181,6 +244,11 @@ function smartcodecopy.copy_with_context()
   else
     outcontent = outcontent .. linesep
   end
+  
+  if addmd then
+      outcontent = outcontent .. '```' .. '\n'
+  end
+  
   local tmpfile = os.tmpname()
   local handle = canhtml and io.open(tmpfile, 'w') or nil
   if handle then
