@@ -216,7 +216,7 @@ function smartcodecopy.copy_with_context()
   local llcc='' -- linewise comment character
   local ftc
   if vim.version().major >= 0 and vim.version().minor >= 11 then
-    ftc = require('Comment.ft_utils') -- For Neovim 0.11 and above
+    ftc = nil -- require('Comment.ft_utils') -- For Neovim 0.11 and above
   else
     ftc = require('Comment.ft') -- For older versions
   end
@@ -226,6 +226,13 @@ function smartcodecopy.copy_with_context()
       if cchar then
           llcc = string.gsub(cchar[1], "%%s", " ")
       end
+  else
+      local commentstring = vim.bo.commentstring
+      if commentstring == "" then
+          -- Fallback logic if commentstring is not set
+          commentstring = "// %s" -- Default to a common comment format
+      end
+      llcc = commentstring .. ' '
   end
 
   local linesep = llcc .. '---------------- \n'
