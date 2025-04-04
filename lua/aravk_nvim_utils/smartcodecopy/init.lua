@@ -214,7 +214,12 @@ function smartcodecopy.copy_with_context()
   local start_line = vim.fn.getpos('v')[2]
 
   local llcc='' -- linewise comment character
-  local ftc = require('Comment.ft')
+  local ftc
+  if vim.version().major >= 0 and vim.version().minor >= 11 then
+    ftc = require('Comment.ft_utils') -- For Neovim 0.11 and above
+  else
+    ftc = require('Comment.ft') -- For older versions
+  end
   local buffer_ft = vim.api.nvim_buf_get_option(0, 'filetype')
   if ftc and buffer_ft then
       local cchar = ftc.get(buffer_ft)
