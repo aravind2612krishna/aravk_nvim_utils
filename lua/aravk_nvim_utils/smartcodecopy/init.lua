@@ -224,14 +224,16 @@ function smartcodecopy.copy_with_context()
     local start_line = vim.fn.getpos('v')[2]
 
     local llcc = '' -- linewise comment character
-    local ftc
+    local ftc = nil
+    local ok = nil
     if vim.version().major >= 0 and vim.version().minor >= 11 then
-        ftc = nil               -- require('Comment.ft_utils') -- For Neovim 0.11 and above
+        ftc = nil
+        ok = nil
     else
-        ftc = require('Comment.ft') -- For older versions
+        ok, ftc = pcall(require, 'Comment.ft') -- For older versions
     end
     local buffer_ft = vim.api.nvim_buf_get_option(0, 'filetype')
-    if ftc and buffer_ft then
+    if ok and ftc and buffer_ft then
         local cchar = ftc.get(buffer_ft)
         if cchar then
             llcc = string.gsub(cchar[1], '%%s', ' ')
