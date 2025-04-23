@@ -129,7 +129,7 @@ local function get_function_decl_lines()
             -- Get all lines between startline and endline in func_decl_lines, with line numbers
             local lines = vim.api.nvim_buf_get_lines(0, startline, endline, false)
             for i, line in ipairs(lines) do
-                func_decl_lines = func_decl_lines .. (startline + i - 1) .. ': ' .. line .. '\n'
+                func_decl_lines = func_decl_lines .. (startline + i) .. ': ' .. line .. '\n'
             end
         end
     end
