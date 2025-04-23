@@ -314,8 +314,10 @@ end
 
 function smartcodecopy.setup(opts)
     -- Merge tables
-    for k, v in pairs(opts) do
-        smartcodecopy.opts[k] = v
+    if opts ~= nil then
+        for k, v in pairs(opts) do
+            smartcodecopy.opts[k] = v
+        end
     end
 
     vim.api.nvim_create_user_command(
