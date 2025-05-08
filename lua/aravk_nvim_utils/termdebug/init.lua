@@ -13,6 +13,7 @@ function termdebugutils.setupdbg()
     vim.g.termdebug_config = {}
   end
   vim.g.termdebug_config['map_K'] = 0
+  vim.g.termdebug_config['sign_decimal'] = 1
 
   vim.cmd('hi debugPC term=reverse ctermbg=darkgrey guibg=darkblue')
   vim.cmd('hi debugBreakpoint term=reverse ctermbg=blue guibg=red')
