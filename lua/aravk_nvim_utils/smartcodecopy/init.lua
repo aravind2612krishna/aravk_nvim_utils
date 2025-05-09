@@ -292,7 +292,13 @@ function smartcodecopy.copy_with_context()
   local gitlinker = nil
   ok, gitlinker = pcall(require, 'gitlinker')
   if ok then
+    local hl_group = "NvimGitLinkerHighlightTextObject"
+    local highlight = require("gitlinker.highlight")
+    if not highlight.hl_group_exists(hl_group) then
+        gitlinker.setup({})
+    end
     gitlinker.link({
+      router_type = 'current_branch',
       action = function(url)
         outcontent = outcontent .. url .. '\n'
         vim.fn.setreg('+', outcontent)
