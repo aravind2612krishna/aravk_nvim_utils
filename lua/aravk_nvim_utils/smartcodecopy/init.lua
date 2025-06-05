@@ -1,6 +1,9 @@
-local smartcodecopy = {}
+local M = {}
 
-smartcodecopy.opts = {
+M.addmd = false
+M.addhtml = false
+
+M.opts = {
   -- The keymap to copy the code
   keymap = '<leader>sc',
   addFunction = true,
@@ -213,9 +216,51 @@ local function split_string(input_str, delimiter)
   return result
 end
 
+function M.copy_to_clipboard(outcontent)
+  if M.addhtml then
+    vim.fn.system('xclip -selection clipboard -t text/html', outcontent)
+  elseif os.getenv('SSH_CONNECTION') then
+    vim.fn.setreg('*', outcontent)
+    require('vim.ui.clipboard.osc52').copy('*')(split_string(outcontent, '\n'))
+  else
+    vim.fn.setreg('+', outcontent)
+  end
+  vim.notify('Copied : ' .. outcontent, vim.log.levels.WARN)
+end
+
+function M.append_git_link(outcontent, start_line, lines, callback)
+  local ok, gitlinker = pcall(require, 'gitlinker')
+  if ok then
+    local hl_group = "NvimGitLinkerHighlightTextObject"
+    local highlight = require("gitlinker.highlight")
+    if not highlight.hl_group_exists(hl_group) then
+      gitlinker.setup({})
+    end
+    gitlinker.link({
+      router_type = 'current_branch',
+      action = function(url)
+        outcontent = outcontent .. url .. '\n'
+        M.copy_to_clipboard(outcontent)
+        if callback then callback(outcontent) end
+      end,
+      highlight_duration = 0,
+      parameters = {
+        lstart = start_line,
+        lend = start_line + #lines - 1,
+      },
+    })
+    return true
+  end
+  return false
+end
+
 -- Function to print information
-function smartcodecopy.copy_with_context()
-  local addmd = true
+function M.copy_with_context()
+  local addmd = M.addmd
+  M.addhtml = not addmd
+  if vim.fn.executable('xclip') ~= 1 then
+      M.addhtml = false
+  end
 
   local bufnr = vim.api.nvim_get_current_buf()
   local file_name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ':.')
@@ -249,7 +294,6 @@ function smartcodecopy.copy_with_context()
   end
 
   local linesep = llcc .. '---------------- \n'
-  local canhtml = false -- vim.fn.exepath("xclip")
 
   local outcontent = ''
   if addmd then
@@ -257,12 +301,19 @@ function smartcodecopy.copy_with_context()
   end
 
   if file_name then
-    outcontent = outcontent .. llcc .. 'File: ' .. file_name .. '\n'
-    outcontent = outcontent .. linesep
+    if M.addhtml then
+      outcontent = outcontent .. '<i>'
+    end
+    outcontent = outcontent .. llcc .. 'File: ' .. file_name
+    if M.addhtml then
+      outcontent = outcontent .. '</i>'
+    else
+      outcontent = outcontent .. '\n' .. linesep
+    end
   end
 
-  if canhtml then
-    outcontent = outcontent .. '<pre>\n'
+  if M.addhtml then
+    outcontent = outcontent .. '<pre><code class="language-' .. buffer_ft .. '">\n'
   end
   local func_decl_lines = get_function_decl_lines()
   func_decl_lines = func_decl_lines or ''
@@ -271,63 +322,21 @@ function smartcodecopy.copy_with_context()
     outcontent = outcontent .. linesep
   end
 
-  if canhtml then
-    outcontent = outcontent .. '<hr>\n'
-  end
   for i, line in ipairs(lines) do
     outcontent = outcontent .. string.format('%d: %s', start_line + i - 1, line) .. '\n'
   end
 
-  if canhtml then
-    outcontent = outcontent .. '</pre>\n'
+  if addmd then
+    outcontent = outcontent .. '```' .. '\n'
+  elseif M.addhtml then
+    outcontent = outcontent .. '</code></pre>'
   else
     outcontent = outcontent .. linesep
   end
 
-  if addmd then
-    outcontent = outcontent .. '```' .. '\n'
-  end
-
   -- Check if gitlinker is available and add a git link
-  local gitlinker = nil
-  ok, gitlinker = pcall(require, 'gitlinker')
-  if ok then
-    local hl_group = "NvimGitLinkerHighlightTextObject"
-    local highlight = require("gitlinker.highlight")
-    if not highlight.hl_group_exists(hl_group) then
-        gitlinker.setup({})
-    end
-    gitlinker.link({
-      router_type = 'current_branch',
-      action = function(url)
-        outcontent = outcontent .. url .. '\n'
-        vim.fn.setreg('+', outcontent)
-        vim.notify('Copied : ' .. outcontent, vim.log.levels.WARN)
-      end,
-      highlight_duration = 0,
-      parameters = {
-        lstart = start_line,
-        lend = start_line + #lines - 1,
-      },
-    })
-  end
-
-  local tmpfile = os.tmpname()
-  local handle = canhtml and io.open(tmpfile, 'w') or nil
-  if handle then
-    handle:write(outcontent)
-    handle:close()
-    local cmd = 'xclip -selection clipboard -l 10 -t text/html  ' .. tmpfile
-    -- vim.print(cmd)
-    os.execute(cmd)
-    os.remove(tmpfile)
-  else
-    if os.getenv('SSH_CONNECTION') then
-      vim.fn.setreg('*', outcontent)
-      require('vim.ui.clipboard.osc52').copy('*')(split_string(outcontent, '\n'))
-    else
-      vim.fn.setreg('+', outcontent)
-    end
+  if not M.append_git_link(outcontent, start_line, lines) then
+    M.copy_to_clipboard(outcontent)
   end
 end
 
@@ -336,27 +345,33 @@ end
 -- 	M.print_info()
 -- end, { range = true })
 
-function smartcodecopy.setup(opts)
+function M.setup(opts)
   -- Merge tables
   if opts ~= nil then
     for k, v in pairs(opts) do
-      smartcodecopy.opts[k] = v
+      M.opts[k] = v
     end
   end
 
   vim.api.nvim_create_user_command(
     'CopyContext',
-    smartcodecopy.copy_with_context,
+    M.copy_with_context,
     { nargs = '*', range = '%' }
   )
-  if smartcodecopy.opts.keymap then
+  if M.opts.keymap then
     vim.keymap.set(
       { 'n', 'x' },
-      smartcodecopy.opts.keymap,
+      M.opts.keymap,
       '<cmd>CopyContext<cr>',
       { silent = true, desc = 'Copy code with context' }
     )
   end
 end
 
-return smartcodecopy
+function M.deactivate()
+  -- Clear autocommands, keymaps, etc.
+  vim.keymap.unset({ 'n', 'x' }, M.opts.keymap)
+  vim.api.nvim_del_user_command('CopyContext')
+end
+
+return M
