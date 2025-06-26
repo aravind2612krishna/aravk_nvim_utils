@@ -1,7 +1,7 @@
 local M = {}
 
 M.addmd = false
-M.addhtml = false
+M.addhtml = vim.fn.executable('xclip') == 1 and not M.addmd
 
 M.opts = {
   -- The keymap to copy the code
@@ -257,10 +257,6 @@ end
 -- Function to print information
 function M.copy_with_context()
   local addmd = M.addmd
-  M.addhtml = not addmd
-  if vim.fn.executable('xclip') ~= 1 then
-      M.addhtml = false
-  end
 
   local bufnr = vim.api.nvim_get_current_buf()
   local file_name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ':.')

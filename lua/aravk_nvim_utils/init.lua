@@ -11,4 +11,8 @@ local aravk_nvim_utils = setmetatable({}, {
   end,
 })
 
+function aravk_nvim_utils.deactivate()
+    -- aravk_nvim_utils
+end
+
 return aravk_nvim_utils
