@@ -90,6 +90,7 @@ M.termdebug_keymaps = {
     opts = { desc = 'Reverse Continue' },
   },
   { mode = 'n', lhs = '<M-j>', rhs = '<cmd>Over<CR>', opts = { desc = 'Step over (next)' } },
+  { mode = 'n', lhs = '<CR>', rhs = '<cmd>Over<CR>', opts = { desc = 'Step over (next)' } },
   {
     mode = 'n',
     lhs = '<M-k>',
@@ -103,6 +104,8 @@ M.termdebug_keymaps = {
     rhs = M.down_stack,
     opts = { desc = 'Gdb down stack frame' },
   },
+  { mode = 'n', lhs = '<M-l>', rhs = '<cmd>Step<CR>', opts = { desc = 'Step into' } },
+  { mode = 'n', lhs = '<M-h>', rhs = '<cmd>Finish<CR>', opts = { desc = 'Step out of' } },
   { mode = 'n', lhs = '<leader>]', rhs = '<cmd>Step<CR>', opts = { desc = 'Step into' } },
   { mode = 'n', lhs = '<leader>[', rhs = '<cmd>Finish<CR>', opts = { desc = 'Step out of' } },
   {
