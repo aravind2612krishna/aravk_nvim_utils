@@ -106,8 +106,8 @@ M.termdebug_keymaps = {
   },
   { mode = 'n', lhs = '<M-l>', rhs = '<cmd>Step<CR>', opts = { desc = 'Step into' } },
   { mode = 'n', lhs = '<M-h>', rhs = '<cmd>Finish<CR>', opts = { desc = 'Step out of' } },
-  { mode = 'n', lhs = '<leader>]', rhs = '<cmd>Step<CR>', opts = { desc = 'Step into' } },
-  { mode = 'n', lhs = '<leader>[', rhs = '<cmd>Finish<CR>', opts = { desc = 'Step out of' } },
+  -- { mode = 'n', lhs = '<leader>]', rhs = '<cmd>Step<CR>', opts = { desc = 'Step into' } },
+  -- { mode = 'n', lhs = '<leader>[', rhs = '<cmd>Finish<CR>', opts = { desc = 'Step out of' } },
   {
     mode = { 'n', 'v' },
     lhs = '<leader>k',
