@@ -155,6 +155,7 @@ function M.setupdbg()
   vim.api.nvim_win_close(0, false)
   vim.cmd('wincmd H')
   vim.cmd('wincmd l')
+  vim.keymap.set({'t'}, "jj", "<C-\\><C-N>")
 
   if not vim.g['termdebug_config'] then
     vim.g.termdebug_config = {}
